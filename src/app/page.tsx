@@ -65,7 +65,7 @@ export default function ProductManagement() {
     if (form.image) {
       const cloudForm = new FormData();
       cloudForm.append('file', form.image);
-      cloudForm.append('upload_preset', 'UploadImage');
+      cloudForm.append('upload_preset', 'Upload-image');
       const cloudRes = await fetch('https://api.cloudinary.com/v1_1/dopjrba7o/image/upload', {
         method: 'POST',
         body: cloudForm,
@@ -157,317 +157,356 @@ export default function ProductManagement() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Modal xem chi tiết sản phẩm */}
-      {showDetailModal && selectedProduct && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Chi tiết sản phẩm</h3>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {selectedProduct.image && (
-                <div className="flex justify-center">
-                  <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
-                    className="h-48 object-cover rounded-md"
-                  />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="relative max-w-7xl mx-auto px-4 py-12">
+        {/* Modal xem chi tiết sản phẩm */}
+        {showDetailModal && selectedProduct && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Chi tiết sản phẩm
+                  </h3>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all"
+                  >
+                    ×
+                  </button>
                 </div>
-              )}
 
-              <div>
-                <h4 className="text-lg font-semibold">Tên sản phẩm</h4>
-                <p className="text-gray-700">{selectedProduct.name}</p>
-              </div>
+                <div className="space-y-6">
+                  {selectedProduct.image && (
+                    <div className="flex justify-center">
+                      <img
+                        src={selectedProduct.image}
+                        alt={selectedProduct.name}
+                        className="h-56 w-full object-cover rounded-xl border border-gray-200"
+                      />
+                    </div>
+                  )}
 
-              <div>
-                <h4 className="text-lg font-semibold">Mô tả</h4>
-                <p className="text-gray-700 whitespace-pre-line">{selectedProduct.description}</p>
-              </div>
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl">
+                      <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Tên sản phẩm</h4>
+                      <p className="text-xl font-semibold text-gray-900">{selectedProduct.name}</p>
+                    </div>
 
-              <div>
-                <h4 className="text-lg font-semibold">Giá</h4>
-                <p className="text-blue-600 font-bold">
-                  {new Intl.NumberFormat('vi-VN').format(selectedProduct.price)} đ
-                </p>
-              </div>
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl">
+                      <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Mô tả</h4>
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">{selectedProduct.description}</p>
+                    </div>
 
-              <div className="pt-4 flex justify-end">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-                >
-                  Đóng
-                </button>
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
+                      <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Giá bán</h4>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {new Intl.NumberFormat('vi-VN').format(selectedProduct.price)} đ
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal chỉnh sửa sản phẩm */}
-      {showEditModal && selectedProduct && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Chỉnh sửa sản phẩm</h3>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
+        {/* Modal chỉnh sửa sản phẩm */}
+        {showEditModal && selectedProduct && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Chỉnh sửa sản phẩm
+                  </h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <form onSubmit={handleEdit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tên sản phẩm</label>
+                    <input
+                      type="text"
+                      className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Mô tả</label>
+                    <textarea
+                      className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 h-24 resize-none"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Giá (VNĐ)</label>
+                    <input
+                      type="number"
+                      className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                      value={editForm.price}
+                      onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                      required
+                      min="0"
+                    />
+                  </div>
+                  <div className="pt-4 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg"
+                    >
+                      Lưu thay đổi
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={editForm.price}
-                  onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                  required
-                  min="0"
-                />
-              </div>
-              <div className="pt-4 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Lưu
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Quản lý Sản phẩm</h1>
+        {/* Header */}
+        <div className="text-center mb-16 pt-8">
+          <h1 className="text-5xl font-bold mb-4 text-white drop-shadow-lg">
+            Quản lý Sản phẩm
+          </h1>
+          <p className="text-gray-200 text-lg drop-shadow-md">Thêm, chỉnh sửa và quản lý danh mục sản phẩm của bạn</p>
+        </div>
 
         {/* Form thêm sản phẩm */}
-        <div className="bg-blue-50 p-6 rounded-lg mb-8">
-          <h2 className="text-xl font-semibold text-blue-800 mb-4">Thêm sản phẩm mới</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 mb-8 shadow-2xl">
+          <div className="flex items-center mb-6">
+            <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full mr-4"></div>
+            <h2 className="text-2xl font-bold text-white">Thêm sản phẩm mới</h2>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm</label>
+                <label className="block text-sm font-semibold text-gray-200 mb-2">Tên sản phẩm</label>
                 <input
                   type="text"
                   placeholder="Nhập tên sản phẩm"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                <input
-                  type="text"
-                  placeholder="Nhập mô tả"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
+                <label className="block text-sm font-semibold text-gray-200 mb-2">Giá (VNĐ)</label>
                 <input
                   type="number"
                   placeholder="Nhập giá"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                   required
                   min="0"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh sản phẩm</label>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Mô tả sản phẩm</label>
+              <textarea
+                placeholder="Nhập mô tả chi tiết..."
+                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200 h-24 resize-none"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Ảnh sản phẩm</label>
+              <div className="relative">
                 <input
                   type="file"
                   accept="image/*"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full bg-white/10 border border-white/30 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
                   onChange={handleFileChange}
                 />
               </div>
             </div>
+            
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow transition duration-200"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl shadow-lg transition-all duration-200 font-semibold text-lg"
             >
-              Thêm sản phẩm
+              ✨ Thêm sản phẩm mới
             </button>
           </form>
         </div>
 
         {/* Bộ lọc và sắp xếp */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Tìm kiếm & Sắp xếp</h2>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm theo tên</label>
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-8 shadow-xl">
+          <div className="flex items-center mb-4">
+            <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
+            <h2 className="text-xl font-bold text-white">Tìm kiếm & Sắp xếp</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Tìm kiếm theo tên</label>
               <input
                 type="text"
                 placeholder="Nhập tên sản phẩm..."
-                className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div className="w-full md:w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Sắp xếp theo</label>
               <select
-                className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full bg-white/10 border border-white/30 text-white p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200"
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
               >
-                <option value="price">Giá</option>
-                <option value="name">Tên</option>
+                <option value="price" className="bg-gray-800">Giá</option>
+                <option value="name" className="bg-gray-800">Tên</option>
               </select>
             </div>
-            <div className="w-full md:w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Thứ tự</label>
               <select
-                className="w-full border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full bg-white/10 border border-white/30 text-white p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200"
                 value={order}
                 onChange={(e) => setOrder(e.target.value as 'asc' | 'desc')}
               >
-                <option value="asc">Tăng dần</option>
-                <option value="desc">Giảm dần</option>
+                <option value="asc" className="bg-gray-800">Tăng dần</option>
+                <option value="desc" className="bg-gray-800">Giảm dần</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Danh sách sản phẩm */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm mb-6">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tên sản phẩm
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mô tả
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá (VNĐ)
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hành động
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide Internationale-y divide-gray-200">
+        {/* Danh sách sản phẩm - Card Layout */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-blue-500 rounded-full mr-3"></div>
+              <h2 className="text-xl font-bold text-white">Danh sách sản phẩm</h2>
+            </div>
+            <div className="text-sm text-gray-300">
+              {products.length} sản phẩm
+            </div>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="text-4xl">📦</span>
+              </div>
+              <p className="text-gray-300 text-lg">Chưa có sản phẩm nào</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((product) => (
-                <tr key={product._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-gray-500 line-clamp-2">{product.description}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-semibold text-blue-600">
-                      {new Intl.NumberFormat('vi-VN').format(product.price)} đ
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleViewDetail(product)}
-                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                        title="Xem chi tiết"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleEditClick(product)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                        title="Chỉnh sửa"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => product._id && handleDelete(product._id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                        title="Xóa"
-                        disabled={isDeleting}
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
+                <div key={product._id} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:bg-white/20 transition-all duration-300 group">
+                  {/* Product Image */}
+                  {product.image && (
+                    <div className="mb-4 overflow-hidden rounded-lg">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                  </td>
-                </tr>
+                  )}
+                  
+                  {/* Product Info */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-white mb-2 truncate">{product.name}</h3>
+                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    <div className="text-2xl font-bold text-yellow-400 drop-shadow-lg">
+                      {new Intl.NumberFormat('vi-VN').format(product.price)} đ
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => handleViewDetail(product)}
+                      className="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all duration-200 border border-green-500/30"
+                      title="Xem chi tiết"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleEditClick(product)}
+                      className="p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all duration-200 border border-blue-500/30"
+                      title="Chỉnh sửa"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => product._id && handleDelete(product._id)}
+                      className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all duration-200 border border-red-500/30 disabled:opacity-50"
+                      title="Xóa"
+                      disabled={isDeleting}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
 
         {/* Phân trang */}
-        <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-          <div className="text-sm text-gray-700">
-            Hiển thị <span className="font-medium">{(page - 1) * limit + 1}</span> đến{' '}
-            <span className="font-medium">{Math.min(page * limit, (page - 1) * limit + products.length)}</span> trong tổng số{' '}
-            <span className="font-medium">{totalPages * limit}</span> sản phẩm
+        {totalPages > 1 && (
+          <div className="mt-8 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-gray-300">
+                Trang <span className="font-bold text-white">{page}</span> trong tổng số{' '}
+                <span className="font-bold text-white">{totalPages}</span> trang
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  disabled={page === 1}
+                  className="px-6 py-2 bg-white/10 border border-white/30 text-white rounded-xl hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm"
+                >
+                  ← Trước
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={page === totalPages}
+                  className="px-6 py-2 bg-white/10 border border-white/30 text-white rounded-xl hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm"
+                >
+                  Tiếp →
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Trước
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              disabled={page === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Tiếp
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
