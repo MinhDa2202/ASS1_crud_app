@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TrashIcon, PencilIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilIcon, EyeIcon, UserIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 
 interface Product {
   _id?: string;
@@ -11,6 +11,12 @@ interface Product {
   description: string;
   price: number;
   image?: string;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
 }
 
 export default function ProductManagement() {
@@ -29,9 +35,99 @@ export default function ProductManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // Auth states
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authForm, setAuthForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [authLoading, setAuthLoading] = useState(false);
+
   useEffect(() => {
-    fetchProducts();
-  }, [page, name, sort, order]);
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProducts();
+    }
+  }, [page, name, sort, order, isAuthenticated]);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      setIsAuthenticated(true);
+      setUser(JSON.parse(userData));
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockUser = {
+        id: '1',
+        username: authForm.username,
+        email: authForm.email || `${authForm.username}@example.com`
+      };
+      
+      localStorage.setItem('token', 'mock-jwt-token');
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      setUser(mockUser);
+      setIsAuthenticated(true);
+      setShowAuthModal(false);
+      setAuthForm({ username: '', email: '', password: '', confirmPassword: '' });
+    } catch (error) {
+      alert('Đăng nhập thất bại!');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Giả lập API register
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (authForm.password !== authForm.confirmPassword) {
+      alert('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+
+    setAuthLoading(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      alert('Đăng ký thành công! Vui lòng đăng nhập.');
+      setAuthMode('login');
+      setAuthForm({ username: '', email: '', password: '', confirmPassword: '' });
+    } catch (error) {
+      alert('Đăng ký thất bại!');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Logout
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setIsAuthenticated(false);
+      setUser(null);
+      setProducts([]);
+    }
+  };
 
   const fetchProducts = async () => {
     const params = new URLSearchParams({
@@ -91,7 +187,7 @@ export default function ProductManagement() {
         name: form.name,
         description: form.description,
         price: form.price,
-        image: imageUrl, // Gửi URL ảnh lên server
+        image: imageUrl,
       }),
     });
 
@@ -100,7 +196,6 @@ export default function ProductManagement() {
       fetchProducts();
     }
   };
-
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,9 +251,134 @@ export default function ProductManagement() {
     setShowEditModal(true);
   };
 
+  // Nếu chưa đăng nhập, hiển thị màn hình login
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+              <UserIcon className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {authMode === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}
+            </h1>
+            <p className="text-gray-300">
+              {authMode === 'login' ? 'Đăng nhập để tiếp tục' : 'Tạo tài khoản mới'}
+            </p>
+          </div>
+
+          <form onSubmit={authMode === 'login' ? handleLogin : handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Tên đăng nhập</label>
+              <input
+                type="text"
+                placeholder="Nhập tên đăng nhập"
+                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                value={authForm.username}
+                onChange={(e) => setAuthForm({ ...authForm, username: e.target.value })}
+                required
+              />
+            </div>
+
+            {authMode === 'register' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-200 mb-2">Email</label>
+                <input
+                  type="email"
+                  placeholder="Nhập email"
+                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                  required
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-200 mb-2">Mật khẩu</label>
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu"
+                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                value={authForm.password}
+                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                required
+              />
+            </div>
+
+            {authMode === 'register' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-200 mb-2">Xác nhận mật khẩu</label>
+                <input
+                  type="password"
+                  placeholder="Nhập lại mật khẩu"
+                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                  value={authForm.confirmPassword}
+                  onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
+                  required
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold disabled:opacity-50"
+            >
+              {authLoading ? 'Đang xử lý...' : (authMode === 'login' ? 'Đăng Nhập' : 'Đăng Ký')}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => {
+                setAuthMode(authMode === 'login' ? 'register' : 'login');
+                setAuthForm({ username: '', email: '', password: '', confirmPassword: '' });
+              }}
+              className="text-purple-300 hover:text-purple-200 transition-colors"
+            >
+              {authMode === 'login' ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="relative max-w-7xl mx-auto px-4 py-12">
+        {/* Header với thông tin user và logout */}
+        <div className="flex justify-between items-center mb-8 pt-4">
+          <div className="text-center flex-1">
+            <h1 className="text-5xl font-bold mb-4 text-white drop-shadow-lg">
+              Quản lý Sản phẩm
+            </h1>
+            <p className="text-gray-200 text-lg drop-shadow-md">Thêm, chỉnh sửa và quản lý danh mục sản phẩm của bạn</p>
+          </div>
+          
+          {/* User info và logout button */}
+          <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
+                <UserIcon className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-white">
+                <div className="text-sm font-semibold">{user?.username}</div>
+                <div className="text-xs text-gray-300">{user?.email}</div>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-200"
+              title="Đăng xuất"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
         {/* Modal xem chi tiết sản phẩm */}
         {showDetailModal && selectedProduct && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -288,14 +508,6 @@ export default function ProductManagement() {
             </div>
           </div>
         )}
-
-        {/* Header */}
-        <div className="text-center mb-16 pt-8">
-          <h1 className="text-5xl font-bold mb-4 text-white drop-shadow-lg">
-            Quản lý Sản phẩm
-          </h1>
-          <p className="text-gray-200 text-lg drop-shadow-md">Thêm, chỉnh sửa và quản lý danh mục sản phẩm của bạn</p>
-        </div>
 
         {/* Form thêm sản phẩm */}
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 mb-8 shadow-2xl">
