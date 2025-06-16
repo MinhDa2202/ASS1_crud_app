@@ -79,25 +79,24 @@ export default function ProductManagement() {
   };
 
   const checkAuth = () => {
-  const token = localStorage.getItem("token");
-  const userData = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
 
-  if (token && userData) {
-    try {
-      const parsedUser = JSON.parse(userData);
-      if (parsedUser && typeof parsedUser === "object") {
-        setIsAuthenticated(true);
-        setUser(parsedUser);
-        return;
+    if (token && userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser && typeof parsedUser === "object") {
+          setIsAuthenticated(true);
+          setUser(parsedUser);
+          return;
+        }
+      } catch (e) {
+        console.error("Lỗi khi parse userData:", e);
       }
-    } catch (e) {
-      console.error("Lỗi khi parse userData:", e);
     }
-  }
-  setIsAuthenticated(false);
-  setUser(null);
-};
-
+    setIsAuthenticated(false);
+    setUser(null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,30 +189,30 @@ export default function ProductManagement() {
     }
   };
 
- const fetchProducts = async () => {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-    name,
-    sort,
-    order,
-  });
+  const fetchProducts = async () => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      name,
+      sort,
+      order,
+    });
 
-  try {
-    const res = await fetch(`/api/products?${params}`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/products?${params}`);
+      const data = await res.json();
 
-    if (res.ok) {
-      setProducts(data.data || []); // Đảm bảo luôn là array
-      setTotalPages(data.pagination?.totalPages || 1);
-    } else {
-      setProducts([]); // Đặt lại nếu có lỗi
+      if (res.ok) {
+        setProducts(data.data || []); // Đảm bảo luôn là array
+        setTotalPages(data.pagination?.totalPages || 1);
+      } else {
+        setProducts([]); // Đặt lại nếu có lỗi
+      }
+    } catch (error) {
+      console.error("Fetch products error:", error);
+      setProducts([]);
     }
-  } catch (error) {
-    console.error("Fetch products error:", error);
-    setProducts([]);
-  }
-};
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -506,72 +505,74 @@ export default function ProductManagement() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-200 mb-2">
+                    Tên sản phẩm
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên sản phẩm"
+                    className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-200 mb-2">
+                    Giá (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Nhập giá"
+                    className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm({ ...form, price: e.target.value })
+                    }
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-200 mb-2">
-                  Tên sản phẩm
+                  Mô tả sản phẩm
                 </label>
-                <input
-                  type="text"
-                  placeholder="Nhập tên sản phẩm"
-                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                <textarea
+                  placeholder="Nhập mô tả chi tiết..."
+                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200 h-24 resize-none"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-200 mb-2">
-                  Giá (VNĐ)
+                  Ảnh sản phẩm
                 </label>
-                <input
-                  type="number"
-                  placeholder="Nhập giá"
-                  className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  required
-                  min="0"
-                />
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full bg-white/10 border border-white/30 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                    onChange={handleFileChange}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                Mô tả sản phẩm
-              </label>
-              <textarea
-                placeholder="Nhập mô tả chi tiết..."
-                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200 h-24 resize-none"
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                Ảnh sản phẩm
-              </label>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full bg-white/10 border border-white/30 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                  onChange={handleFileChange}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl shadow-lg transition-all duration-200 font-semibold text-lg"
-            >
-              ✨ Thêm sản phẩm mới
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl shadow-lg transition-all duration-200 font-semibold text-lg"
+              >
+                ✨ Thêm sản phẩm mới
+              </button>
+            </form>
           </div>
         )}
 
