@@ -82,18 +82,20 @@ export default function ProductManagement() {
   const token = localStorage.getItem("token");
   const userData = localStorage.getItem("user");
 
-  if (token && userData && userData !== "undefined") {
+  if (token && userData) {
     try {
       const parsedUser = JSON.parse(userData);
-      setIsAuthenticated(true);
-      setUser(parsedUser);
+      if (parsedUser && typeof parsedUser === "object") {
+        setIsAuthenticated(true);
+        setUser(parsedUser);
+        return;
+      }
     } catch (e) {
       console.error("Lỗi khi parse userData:", e);
-      setIsAuthenticated(false);
     }
-  } else {
-    setIsAuthenticated(false);
   }
+  setIsAuthenticated(false);
+  setUser(null);
 };
 
 
@@ -188,23 +190,30 @@ export default function ProductManagement() {
     }
   };
 
-  const fetchProducts = async () => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      name,
-      sort,
-      order,
-    });
+ const fetchProducts = async () => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    name,
+    sort,
+    order,
+  });
 
+  try {
     const res = await fetch(`/api/products?${params}`);
     const data = await res.json();
 
-    if (data.success) {
-      setProducts(data.data);
-      setTotalPages(data.pagination.totalPages);
+    if (res.ok) {
+      setProducts(data.data || []); // Đảm bảo luôn là array
+      setTotalPages(data.pagination?.totalPages || 1);
+    } else {
+      setProducts([]); // Đặt lại nếu có lỗi
     }
-  };
+  } catch (error) {
+    console.error("Fetch products error:", error);
+    setProducts([]);
+  }
+};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
