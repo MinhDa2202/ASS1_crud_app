@@ -145,6 +145,11 @@ export default function ProductManagement() {
       return;
     }
 
+    if (!authForm.email.includes("@")) {
+      alert("Vui lòng nhập email hợp lệ!");
+      return;
+    }
+
     setAuthLoading(true);
 
     try {
@@ -203,10 +208,10 @@ export default function ProductManagement() {
       const data = await res.json();
 
       if (res.ok) {
-        setProducts(data.data || []); // Đảm bảo luôn là array
+        setProducts(data.data || []);
         setTotalPages(data.pagination?.totalPages || 1);
       } else {
-        setProducts([]); // Đặt lại nếu có lỗi
+        setProducts([]);
       }
     } catch (error) {
       console.error("Fetch products error:", error);
@@ -398,6 +403,24 @@ export default function ProductManagement() {
                 onSubmit={authMode === "login" ? handleLogin : handleRegister}
                 className="space-y-4"
               >
+                {authMode === "register" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-200 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Nhập email"
+                      className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                      value={authForm.email}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, email: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-200 mb-2">
                     Tên đăng nhập
