@@ -9,6 +9,13 @@ import {
   EyeIcon,
   UserIcon,
   ArrowRightOnRectangleIcon,
+  ShoppingCartIcon,
+  PlusIcon,
+  MinusIcon,
+  ClipboardDocumentListIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 interface Product {
@@ -23,6 +30,31 @@ interface User {
   id: string;
   username: string;
   email: string;
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+interface Order {
+  _id?: string;
+  userId: string;
+  items: {
+    product: Product;
+    quantity: number;
+    price: number;
+  }[];
+  totalAmount: number;
+  status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+  customerInfo: {
+    name: string;
+    phone: string;
+    address: string;
+    email: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function ProductManagement() {
@@ -49,6 +81,20 @@ export default function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderForm, setOrderForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    email: "",
+  });
+  const [currentView, setCurrentView] = useState<"products" | "orders">(
+    "products"
+  );
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -69,6 +115,12 @@ export default function ProductManagement() {
   useEffect(() => {
     fetchProducts();
   }, [page, name, sort, order]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchOrders();
+    }
+  }, [isAuthenticated]);
 
   const requireAuth = () => {
     if (!isAuthenticated) {
@@ -332,6 +384,142 @@ export default function ProductManagement() {
     setShowDetailModal(true);
   }
 
+  const addToCart = (product: Product) => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setCart((prevCart) => {
+      const existingItem = prevCart.find(
+        (item) => item.product._id === product._id
+      );
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.product._id === product._id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        return [...prevCart, { product, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.product._id === productId ? { ...item, quantity } : item
+      )
+    );
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => item.product._id !== productId)
+    );
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    );
+  };
+
+  const getCartItemsCount = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  // Order functions
+  const fetchOrders = async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data.orders || []);
+      }
+    } catch (error) {
+      console.error("Fetch orders error:", error);
+    }
+  };
+
+  const submitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated || cart.length === 0) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const orderData = {
+        items: cart.map((item) => ({
+          product: item.product,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+        totalAmount: getCartTotal(),
+        customerInfo: orderForm,
+      };
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (res.ok) {
+        setCart([]);
+        setShowCartModal(false);
+        setOrderForm({ name: "", phone: "", address: "", email: "" });
+        fetchOrders();
+        alert("Đặt hàng thành công!");
+      } else {
+        alert("Đặt hàng thất bại!");
+      }
+    } catch (error) {
+      console.error("Order error:", error);
+      alert("Đặt hàng thất bại!");
+    }
+  };
+
+  const updateOrderStatus = async (
+    orderId: string,
+    status: Order["status"]
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (res.ok) {
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error("Update order status error:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="relative max-w-7xl mx-auto px-4 py-12">
@@ -350,6 +538,20 @@ export default function ProductManagement() {
           <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-2">
             {isAuthenticated ? (
               <>
+                {/* Cart Button */}
+                <button
+                  onClick={() => setShowCartModal(true)}
+                  className="relative p-2 text-white hover:text-purple-300 transition-colors"
+                  title="Giỏ hàng"
+                >
+                  <ShoppingCartIcon className="h-6 w-6" />
+                  {getCartItemsCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {getCartItemsCount()}
+                    </span>
+                  )}
+                </button>
+
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
                     <UserIcon className="h-4 w-4 text-white" />
@@ -381,187 +583,384 @@ export default function ProductManagement() {
           </div>
         </div>
 
-{/* Modal đăng nhập/đăng ký */}
-{showAuthModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
-          <UserIcon className="h-8 w-8 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {authMode === "login" ? "Đăng Nhập" : "Đăng Ký"}
-        </h1>
-        <p className="text-gray-300">
-          {authMode === "login"
-            ? "Đăng nhập để tiếp tục"
-            : "Tạo tài khoản mới"}
-        </p>
-      </div>
-
-      <form
-        onSubmit={authMode === "login" ? handleLogin : handleRegister}
-        className="space-y-4"
-      >
-        {authMode === "register" && (
-          <>
-            <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="Nhập email"
-                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                value={authForm.email}
-                onChange={(e) =>
-                  setAuthForm({ ...authForm, email: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                Mật khẩu
-              </label>
-              <input
-                type="password"
-                placeholder="Nhập mật khẩu"
-                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                value={authForm.password}
-                onChange={(e) =>
-                  setAuthForm({ ...authForm, password: e.target.value })
-                }
-                required
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
-                title="Mật khẩu phải chứa ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số"
-              />
-              {authMode === "register" && authForm.password && (
-                <div className="mt-2 text-xs text-gray-300">
-                  <p className={authForm.password.length >= 6 ? "text-green-400" : "text-red-400"}>
-                    ✓ Ít nhất 6 ký tự
-                  </p>
-                  <p className={/[A-Z]/.test(authForm.password) ? "text-green-400" : "text-red-400"}>
-                    ✓ Chứa ít nhất 1 chữ hoa
-                  </p>
-                  <p className={/[a-z]/.test(authForm.password) ? "text-green-400" : "text-red-400"}>
-                    ✓ Chứa ít nhất 1 chữ thường
-                  </p>
-                  <p className={/\d/.test(authForm.password) ? "text-green-400" : "text-red-400"}>
-                    ✓ Chứa ít nhất 1 số
-                  </p>
+        {/* Modal đăng nhập/đăng ký */}
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                  <UserIcon className="h-8 w-8 text-white" />
                 </div>
-              )}
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {authMode === "login" ? "Đăng Nhập" : "Đăng Ký"}
+                </h1>
+                <p className="text-gray-300">
+                  {authMode === "login"
+                    ? "Đăng nhập để tiếp tục"
+                    : "Tạo tài khoản mới"}
+                </p>
+              </div>
+
+              <form
+                onSubmit={authMode === "login" ? handleLogin : handleRegister}
+                className="space-y-4"
+              >
+                {authMode === "register" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-200 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="Nhập email"
+                        className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                        value={authForm.email}
+                        onChange={(e) =>
+                          setAuthForm({ ...authForm, email: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-200 mb-2">
+                        Mật khẩu
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Nhập mật khẩu"
+                        className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                        value={authForm.password}
+                        onChange={(e) =>
+                          setAuthForm({ ...authForm, password: e.target.value })
+                        }
+                        required
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
+                        title="Mật khẩu phải chứa ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số"
+                      />
+                      {authMode === "register" && authForm.password && (
+                        <div className="mt-2 text-xs text-gray-300">
+                          <p
+                            className={
+                              authForm.password.length >= 6
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            ✓ Ít nhất 6 ký tự
+                          </p>
+                          <p
+                            className={
+                              /[A-Z]/.test(authForm.password)
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            ✓ Chứa ít nhất 1 chữ hoa
+                          </p>
+                          <p
+                            className={
+                              /[a-z]/.test(authForm.password)
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            ✓ Chứa ít nhất 1 chữ thường
+                          </p>
+                          <p
+                            className={
+                              /\d/.test(authForm.password)
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            ✓ Chứa ít nhất 1 số
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-200 mb-2">
+                        Xác nhận mật khẩu
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Nhập lại mật khẩu"
+                        className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                        value={authForm.confirmPassword}
+                        onChange={(e) =>
+                          setAuthForm({
+                            ...authForm,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                      {authForm.confirmPassword &&
+                        authForm.password !== authForm.confirmPassword && (
+                          <p className="mt-1 text-xs text-red-400">
+                            Mật khẩu xác nhận không khớp
+                          </p>
+                        )}
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-200 mb-2">
+                    Tên đăng nhập
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên đăng nhập"
+                    className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                    value={authForm.username}
+                    onChange={(e) =>
+                      setAuthForm({ ...authForm, username: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                {authMode === "login" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-200 mb-2">
+                      Mật khẩu
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Nhập mật khẩu"
+                      className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
+                      value={authForm.password}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, password: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(false)}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      authLoading ||
+                      (authMode === "register" &&
+                        (authForm.password !== authForm.confirmPassword ||
+                          !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
+                            authForm.password
+                          )))
+                    }
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold disabled:opacity-50"
+                  >
+                    {authLoading
+                      ? "Đang xử lý..."
+                      : authMode === "login"
+                      ? "Đăng Nhập"
+                      : "Đăng Ký"}
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => {
+                    setAuthMode(authMode === "login" ? "register" : "login");
+                    setAuthForm({
+                      username: "",
+                      email: "",
+                      password: "",
+                      confirmPassword: "",
+                    });
+                  }}
+                  className="text-purple-300 hover:text-purple-200 transition-colors"
+                >
+                  {authMode === "login"
+                    ? "Chưa có tài khoản? Đăng ký ngay"
+                    : "Đã có tài khoản? Đăng nhập"}
+                </button>
+              </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                Xác nhận mật khẩu
-              </label>
-              <input
-                type="password"
-                placeholder="Nhập lại mật khẩu"
-                className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-                value={authForm.confirmPassword}
-                onChange={(e) =>
-                  setAuthForm({
-                    ...authForm,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                required
-              />
-              {authForm.confirmPassword && authForm.password !== authForm.confirmPassword && (
-                <p className="mt-1 text-xs text-red-400">Mật khẩu xác nhận không khớp</p>
-              )}
-            </div>
-          </>
-        )}
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-200 mb-2">
-            Tên đăng nhập
-          </label>
-          <input
-            type="text"
-            placeholder="Nhập tên đăng nhập"
-            className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-            value={authForm.username}
-            onChange={(e) =>
-              setAuthForm({ ...authForm, username: e.target.value })
-            }
-            required
-          />
-        </div>
-
-        {authMode === "login" && (
-          <div>
-            <label className="block text-sm font-semibold text-gray-200 mb-2">
-              Mật khẩu
-            </label>
-            <input
-              type="password"
-              placeholder="Nhập mật khẩu"
-              className="w-full bg-white/10 border border-white/30 text-white placeholder-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-200"
-              value={authForm.password}
-              onChange={(e) =>
-                setAuthForm({ ...authForm, password: e.target.value })
-              }
-              required
-            />
           </div>
         )}
 
-        <div className="flex space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={() => setShowAuthModal(false)}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={
-              authLoading || 
-              (authMode === "register" && (
-                authForm.password !== authForm.confirmPassword ||
-                !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(authForm.password)
-              ))
-            }
-            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold disabled:opacity-50"
-          >
-            {authLoading
-              ? "Đang xử lý..."
-              : authMode === "login"
-              ? "Đăng Nhập"
-              : "Đăng Ký"}
-          </button>
-        </div>
-      </form>
+        {/* Cart Modal */}
+        {showCartModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 flex items-center">
+                    <ShoppingCartIcon className="h-6 w-6 mr-2" />
+                    Giỏ hàng ({getCartItemsCount()} sản phẩm)
+                  </h3>
+                  <button
+                    onClick={() => setShowCartModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
 
-      <div className="mt-6 text-center">
-        <button
-          onClick={() => {
-            setAuthMode(authMode === "login" ? "register" : "login");
-            setAuthForm({
-              username: "",
-              email: "",
-              password: "",
-              confirmPassword: "",
-            });
-          }}
-          className="text-purple-300 hover:text-purple-200 transition-colors"
-        >
-          {authMode === "login"
-            ? "Chưa có tài khoản? Đăng ký ngay"
-            : "Đã có tài khoản? Đăng nhập"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                {cart.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingCartIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500">Giỏ hàng trống</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6">
+                      {cart.map((item) => (
+                        <div
+                          key={item.product._id}
+                          className="flex items-center space-x-4 p-4 border rounded-lg"
+                        >
+                          {item.product.image && (
+                            <img
+                              src={item.product.image}
+                              alt={item.product.name}
+                              className="h-16 w-16 object-cover rounded-lg"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-semibold">
+                              {item.product.name}
+                            </h4>
+                            <p className="text-gray-600">
+                              {new Intl.NumberFormat("vi-VN").format(
+                                item.product.price
+                              )}{" "}
+                              đ
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() =>
+                                updateCartQuantity(
+                                  item.product._id!,
+                                  item.quantity - 1
+                                )
+                              }
+                              className="p-1 hover:bg-gray-100 rounded"
+                            >
+                              <MinusIcon className="h-4 w-4" />
+                            </button>
+                            <span className="px-3 py-1 bg-gray-100 rounded">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateCartQuantity(
+                                  item.product._id!,
+                                  item.quantity + 1
+                                )
+                              }
+                              className="p-1 hover:bg-gray-100 rounded"
+                            >
+                              <PlusIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => removeFromCart(item.product._id!)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded ml-2"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="border-t pt-4 mb-6">
+                      <div className="flex justify-between items-center text-xl font-bold">
+                        <span>Tổng cộng:</span>
+                        <span className="text-purple-600">
+                          {new Intl.NumberFormat("vi-VN").format(
+                            getCartTotal()
+                          )}{" "}
+                          đ
+                        </span>
+                      </div>
+                    </div>
+
+                    <form onSubmit={submitOrder} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Họ tên"
+                          className="p-3 border rounded-lg"
+                          value={orderForm.name}
+                          onChange={(e) =>
+                            setOrderForm({ ...orderForm, name: e.target.value })
+                          }
+                          required
+                        />
+                        <input
+                          type="tel"
+                          placeholder="Số điện thoại"
+                          className="p-3 border rounded-lg"
+                          value={orderForm.phone}
+                          onChange={(e) =>
+                            setOrderForm({
+                              ...orderForm,
+                              phone: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        className="w-full p-3 border rounded-lg"
+                        value={orderForm.email}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, email: e.target.value })
+                        }
+                        required
+                      />
+                      <textarea
+                        placeholder="Địa chỉ giao hàng"
+                        className="w-full p-3 border rounded-lg h-20 resize-none"
+                        value={orderForm.address}
+                        onChange={(e) =>
+                          setOrderForm({
+                            ...orderForm,
+                            address: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                      <div className="flex space-x-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowCartModal(false)}
+                          className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600"
+                        >
+                          Đóng
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+                        >
+                          Đặt hàng
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {isAuthenticated && (
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 mb-8 shadow-2xl">
@@ -829,6 +1228,13 @@ export default function ProductManagement() {
 
                   {/* Action Buttons */}
                   <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => addToCart(product)}
+                      className="flex-1 mr-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-200 text-sm font-medium"
+                    >
+                      <ShoppingCartIcon className="h-4 w-4 inline mr-1" />
+                      Thêm vào giỏ
+                    </button>
                     <button
                       onClick={() => handleViewDetail(product)}
                       className="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all duration-200 border border-green-500/30"
