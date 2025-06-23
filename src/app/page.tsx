@@ -85,7 +85,9 @@ export default function ProductManagement() {
   const [showCartModal, setShowCartModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
+  const [orderHistory, setOrderHistory] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [orderForm, setOrderForm] = useState({
     name: "",
     phone: "",
@@ -121,6 +123,21 @@ export default function ProductManagement() {
       fetchOrders();
     }
   }, [isAuthenticated]);
+
+const fetchOrderHistory = async (email: string) => {
+  try {
+    setLoadingOrders(true);
+    const res = await fetch(`/api/orders?email=${email}`);
+    const data = await res.json();
+    setOrderHistory(data);
+  } catch (err) {
+    console.error("Lỗi khi tải lịch sử đơn hàng", err);
+  } finally {
+    setLoadingOrders(false);
+  }
+};
+
+
 
   const requireAuth = () => {
     if (!isAuthenticated) {
@@ -457,46 +474,42 @@ export default function ProductManagement() {
     }
   };
 
-  const submitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isAuthenticated || cart.length === 0) return;
+  async function submitOrder(e: React.FormEvent) {
+  e.preventDefault();
 
-    try {
-      const token = localStorage.getItem("token");
-      const orderData = {
-        items: cart.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-        totalAmount: getCartTotal(),
-        customerInfo: orderForm,
-      };
-
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (res.ok) {
-        setCart([]);
-        setShowCartModal(false);
-        setOrderForm({ name: "", phone: "", address: "", email: "" });
-        fetchOrders();
-        alert("Đặt hàng thành công!");
-      } else {
-        alert("Đặt hàng thất bại!");
-      }
-    } catch (error) {
-      console.error("Order error:", error);
-      alert("Đặt hàng thất bại!");
-    }
+  const orderData = {
+    name: orderForm.name,
+    phone: orderForm.phone,
+    email: orderForm.email,
+    address: orderForm.address,
+    items: cart.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+    })),
   };
+console.log("Sending order data:", orderData);
+  try {
+    const res = await fetch("/api/orders", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(orderData),
+});
 
+if (!res.ok) {
+  const errText = await res.text();
+  console.error("API Error:", res.status, errText);
+  throw new Error("Failed to place order");
+}
+
+    const data = await res.json();
+    alert("Đặt hàng thành công!");
+    setCart([]); // clear cart
+    setShowCartModal(false); // close modal
+  } catch (error) {
+    console.error(error);
+    alert("Đặt hàng thất bại!");
+  }
+}
   const updateOrderStatus = async (
     orderId: string,
     status: Order["status"]
@@ -551,6 +564,16 @@ export default function ProductManagement() {
                     </span>
                   )}
                 </button>
+
+                <button
+  onClick={() => {
+    setShowOrderModal(true);
+    fetchOrderHistory(orderForm.email);
+  }}
+  className="ml-2 text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center"
+>
+  <span className="mr-1">🧾</span> Lịch sử
+</button>
 
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
@@ -1042,6 +1065,63 @@ export default function ProductManagement() {
             </form>
           </div>
         )}
+
+        {showOrderModal && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">Lịch sử đơn hàng</h3>
+          <button
+            onClick={() => setShowOrderModal(false)}
+            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+          >
+            ×
+          </button>
+        </div>
+
+        {loadingOrders ? (
+          <p className="text-center text-gray-500">Đang tải...</p>
+        ) : orderHistory.length === 0 ? (
+          <p className="text-center text-gray-500">Không tìm thấy đơn hàng nào.</p>
+        ) : (
+          <div className="space-y-4">
+            {orderHistory.map((order: any) => (
+              <div key={order._id} className="border p-4 rounded-lg">
+                <p className="text-gray-800 font-semibold">
+                  Ngày đặt: {new Date(order.createdAt).toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">Họ tên: {order.name}</p>
+                <p className="text-sm text-gray-600">SĐT: {order.phone}</p>
+                <p className="text-sm text-gray-600">Địa chỉ: {order.address}</p>
+                <div className="mt-2">
+                  {order.items.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between text-sm text-gray-700">
+                      <span>Sản Phẩm: {item.product?.name}</span>
+                      <span>
+                        {item.quantity} × {new Intl.NumberFormat("vi-VN").format(item.product?.price)} đ
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-right text-purple-600 font-bold mt-2">
+                  Tổng:{" "}
+                  {new Intl.NumberFormat("vi-VN").format(
+                    order.items.reduce(
+                      (sum: number, i: any) => sum + i.quantity * i.product.price,
+                      0
+                    )
+                  )}{" "}
+                  đ
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Modal xem chi tiết sản phẩm */}
         {showDetailModal && selectedProduct && (
