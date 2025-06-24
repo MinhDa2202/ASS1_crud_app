@@ -4,12 +4,14 @@ import Order from '@/models/Order';
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params;
+
   await connectDB();
 
   try {
-    const deletedOrder = await Order.findByIdAndDelete(params.id);
+    const deletedOrder = await Order.findByIdAndDelete(id);
     if (!deletedOrder) {
       return new Response(JSON.stringify({ message: 'Order not found' }), { status: 404 });
     }
