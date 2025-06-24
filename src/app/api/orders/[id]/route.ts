@@ -4,20 +4,25 @@ import Order from '@/models/Order';
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
-) {
-  const { id } = context.params;
-
+  { params }: { params: { id: string } }
+): Promise<Response> {
   await connectDB();
 
   try {
-    const deletedOrder = await Order.findByIdAndDelete(id);
+    const deletedOrder = await Order.findByIdAndDelete(params.id);
+
     if (!deletedOrder) {
-      return new Response(JSON.stringify({ message: 'Order not found' }), { status: 404 });
+      return new Response(JSON.stringify({ message: 'Order not found' }), {
+        status: 404,
+      });
     }
 
-    return new Response(JSON.stringify({ message: 'Order deleted' }), { status: 200 });
+    return new Response(JSON.stringify({ message: 'Order deleted' }), {
+      status: 200,
+    });
   } catch (error) {
-    return new Response(JSON.stringify({ message: 'Server error' }), { status: 500 });
+    return new Response(JSON.stringify({ message: 'Server error' }), {
+      status: 500,
+    });
   }
 }
