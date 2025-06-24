@@ -2,20 +2,16 @@ import { NextRequest } from 'next/server';
 import { connectDB } from '@/lib/Mongoose';
 import Order from '@/models/Order';
 
-type Context = {
-  params: {
-    id: string;
-  };
-};
-
 export async function DELETE(
-  req: NextRequest,
-  { params }: Context
+  request: NextRequest,
+  context: { params: { id: string } }
 ): Promise<Response> {
+  const { id } = context.params;
+
   await connectDB();
 
   try {
-    const deletedOrder = await Order.findByIdAndDelete(params.id);
+    const deletedOrder = await Order.findByIdAndDelete(id);
 
     if (!deletedOrder) {
       return new Response(JSON.stringify({ message: 'Order not found' }), {
