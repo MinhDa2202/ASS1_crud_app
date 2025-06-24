@@ -3,7 +3,7 @@ import { connectDB } from '@/lib/Mongoose';
 import Order from '@/models/Order';
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { id: string } }
 ): Promise<Response> {
   const { id } = context.params;
