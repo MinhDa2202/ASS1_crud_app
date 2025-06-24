@@ -1,17 +1,21 @@
-import { connectDB } from "@/lib/Mongoose";
-import Order from "@/models/Order";
-import { NextResponse } from "next/server";
+import { NextRequest } from 'next/server';
+import { connectDB } from '@/lib/Mongoose';
+import Order from '@/models/Order';
 
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  await connectDB();
+
   try {
-    await connectDB();
-    await Order.findByIdAndDelete(params.id);
-    return NextResponse.json({ message: "Đã hủy đơn hàng" });
+    const deletedOrder = await Order.findByIdAndDelete(params.id);
+    if (!deletedOrder) {
+      return new Response(JSON.stringify({ message: 'Order not found' }), { status: 404 });
+    }
+
+    return new Response(JSON.stringify({ message: 'Order deleted' }), { status: 200 });
   } catch (error) {
-    console.error("❌ Error in DELETE /api/orders/[id]:", error);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    return new Response(JSON.stringify({ message: 'Server error' }), { status: 500 });
   }
 }
