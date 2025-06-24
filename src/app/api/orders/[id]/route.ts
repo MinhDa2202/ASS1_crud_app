@@ -4,9 +4,10 @@ import Order from '@/models/Order';
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const id = context.params.id;
+  // Await params since it's now a Promise in Next.js 15
+  const { id } = await context.params;
 
   await connectDB();
 
