@@ -2,9 +2,15 @@ import { NextRequest } from 'next/server';
 import { connectDB } from '@/lib/Mongoose';
 import Order from '@/models/Order';
 
+type Context = {
+  params: {
+    id: string;
+  };
+};
+
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: Context
 ): Promise<Response> {
   await connectDB();
 
