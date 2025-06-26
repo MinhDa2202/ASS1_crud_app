@@ -437,12 +437,13 @@ export default function ProductManagement() {
     );
   };
 
-  const getCartTotal = () => {
-    return cart.reduce(
-      (total, item) => total + item.product.price * item.quantity,
-      0
-    );
-  };
+ const getCartTotal = () => {
+  return cart.reduce((total, item) => {
+    if (!item.product || item.product.price == null) return total;
+    return total + item.product.price * item.quantity;
+  }, 0);
+};
+
 
   const getCartItemsCount = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
@@ -1142,16 +1143,17 @@ export default function ProductManagement() {
                         </div>
 
                         <p className="text-right text-purple-600 font-bold mt-2">
-                          Tổng:{" "}
-                          {new Intl.NumberFormat("vi-VN").format(
-                            order.items.reduce(
-                              (sum: number, i: any) =>
-                                sum + i.quantity * i.product.price,
-                              0
-                            )
-                          )}{" "}
-                          đ
-                        </p>
+  Tổng:{" "}
+  {new Intl.NumberFormat("vi-VN").format(
+    order.items.reduce(
+      (sum: number, i: any) =>
+        sum + (i?.product?.price != null ? i.quantity * i.product.price : 0),
+      0
+    )
+  )}{" "}
+  đ
+</p>
+
                       </div>
                     ))}
                   </div>
