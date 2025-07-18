@@ -27,9 +27,11 @@ export const useProducts = ({ isAuthenticated, requireAuth, user }: UseProductsP
   const [limit] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -45,6 +47,7 @@ export const useProducts = ({ isAuthenticated, requireAuth, user }: UseProductsP
     });
 
     try {
+      setIsLoading(true);
       const res = await fetch(`/api/products?${params}`);
       const data = await res.json();
 
@@ -57,6 +60,10 @@ export const useProducts = ({ isAuthenticated, requireAuth, user }: UseProductsP
     } catch (error) {
       console.error("Fetch products error:", error);
       setProducts([]);
+    } finally {
+      // Add a small delay to make the loading effect visible for testing
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsLoading(false);
     }
   };
 
@@ -190,11 +197,14 @@ export const useProducts = ({ isAuthenticated, requireAuth, user }: UseProductsP
     limit,
     totalPages,
     isDeleting,
+    isLoading,
     selectedProduct,
     showDetailModal,
     setShowDetailModal,
     showEditModal,
     setShowEditModal,
+    showAddProductModal,
+    setShowAddProductModal,
     fetchProducts,
     handleFileChange,
     handleSubmit,

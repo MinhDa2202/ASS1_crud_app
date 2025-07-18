@@ -17,6 +17,7 @@ interface HeaderProps {
   setShowOrderModal: (show: boolean) => void;
   fetchOrderHistory: (email: string) => Promise<void>;
   orderFormEmail: string;
+  setShowAddProductModal: (show: boolean) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   setShowOrderModal,
   fetchOrderHistory,
   orderFormEmail,
+  setShowAddProductModal,
 }) => {
   return (
     <div className="flex justify-between items-center mb-8 pt-4">
@@ -55,6 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
                   {getCartItemsCount()}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => setShowAddProductModal(true)}
+              className="ml-2 text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center"
+              title="Thêm sản phẩm mới"
+            >
+              <span className="mr-1">➕</span> Thêm sản phẩm
             </button>
 
             <button

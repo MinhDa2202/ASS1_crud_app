@@ -16,6 +16,7 @@ import { ProductList } from "../components/ProductList";
 import { Pagination } from "../components/Pagination";
 import { Header } from "../components/Header";
 import { SearchAndSort } from "../components/SearchAndSort";
+import { Modal } from "../components/Modal";
 
 export default function ProductManagement() {
   const router = useRouter();
@@ -53,11 +54,14 @@ export default function ProductManagement() {
     limit,
     totalPages,
     isDeleting,
+    isLoading,
     selectedProduct,
     showDetailModal,
     setShowDetailModal,
     showEditModal,
     setShowEditModal,
+    showAddProductModal,
+    setShowAddProductModal,
     fetchProducts,
     handleFileChange,
     handleSubmit,
@@ -111,6 +115,7 @@ export default function ProductManagement() {
           setShowOrderModal={setShowOrderModal}
           fetchOrderHistory={fetchOrderHistory}
           orderFormEmail={orderForm.email}
+          setShowAddProductModal={setShowAddProductModal}
         />
 
         <AuthModal
@@ -154,13 +159,19 @@ export default function ProductManagement() {
           selectedProduct={selectedProduct}
         />
 
-        <ProductForm
-          form={form}
-          setForm={setForm}
-          handleFileChange={handleFileChange}
-          handleSubmit={handleSubmit}
-          isAuthenticated={isAuthenticated}
-        />
+        <Modal
+          show={showAddProductModal}
+          onClose={() => setShowAddProductModal(false)}
+          title="Thêm sản phẩm mới"
+        >
+          <ProductForm
+            form={form}
+            setForm={setForm}
+            handleFileChange={handleFileChange}
+            handleSubmit={handleSubmit}
+            isAuthenticated={isAuthenticated}
+          />
+        </Modal>
 
         <SearchAndSort
           name={name}
@@ -178,6 +189,7 @@ export default function ProductManagement() {
           handleEditClick={handleEditClick}
           handleDelete={handleDelete}
           isDeleting={isDeleting}
+          isLoading={isLoading}
         />
 
         <Pagination
